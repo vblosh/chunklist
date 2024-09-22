@@ -12,8 +12,8 @@ template <typename T>
 class Chunklist {
 public:
     // Constructor
-    Chunklist() : chunklist_(nullptr), own_container_(true) {
-        chunklist_ = chunklist_create(sizeof(T));
+    Chunklist(size_t chunk_size = CHUNKLIST_CHUNK_SIZE) : chunklist_(nullptr), own_container_(true) {
+        chunklist_ = chunklist_create(sizeof(T), chunk_size);
         if (!chunklist_) {
             throw std::runtime_error("Failed to create chunklist.");
         }

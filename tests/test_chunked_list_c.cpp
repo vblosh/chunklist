@@ -9,7 +9,7 @@ protected:
 
     void SetUp() override {
         // Create a chunked_list with int items
-        list = chunklist_create(sizeof(int));
+        list = chunklist_create(sizeof(int), 1024);
     }
 
     void TearDown() override {

@@ -9,7 +9,7 @@ protected:
 
     void SetUp() override {
         // Create a chunked_list with int items
-        plist = new container::chunklist::Chunklist<int>();
+        plist = new container::chunklist::Chunklist<int>(1024);
     }
 
     void TearDown() override {

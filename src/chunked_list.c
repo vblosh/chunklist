@@ -11,19 +11,21 @@ typedef struct Chunk {
 
 typedef struct {
     size_t item_size;    // Size of each item
+	size_t chunk_size;	 // Size of each chunk
     size_t total_items;  // Total number of items in the chunklist
     Chunk* head;         // Pointer to the first chunk
     Chunk* tail;         // Pointer to the last chunk
 } ChunkedList;
 
 // Function to create a new chunklist
-CHUNKLIST_HANDLE chunklist_create(size_t item_size) {
+CHUNKLIST_HANDLE chunklist_create(size_t item_size, size_t chunk_size) {
     ChunkedList* chunked_list = (ChunkedList*)malloc(sizeof(ChunkedList));
     if (!chunked_list) {
         return NULL;
     }
 
     chunked_list->item_size = item_size;
+    chunked_list->chunk_size = chunk_size;
     chunked_list->total_items = 0;
     chunked_list->head = NULL;
     chunked_list->tail = NULL;
@@ -69,8 +71,8 @@ int chunklist_expand(CHUNKLIST_HANDLE list, void** pnewItem) {
     ChunkedList* chunked_list = (ChunkedList*)list;
     
     // Check if the tail chunk is full or doesn't exist
-    if (!chunked_list->tail || chunked_list->tail->used + chunked_list->item_size > CHUNKLIST_CHUNK_SIZE) {
-        Chunk* new_chunk = create_chunk(CHUNKLIST_CHUNK_SIZE);
+    if (!chunked_list->tail || chunked_list->tail->used + chunked_list->item_size > chunked_list->chunk_size) {
+        Chunk* new_chunk = create_chunk(chunked_list->chunk_size);
         if (!new_chunk) {
             return CHUNKLIST_ERROR_ALLOCATION_FAILED;
         }

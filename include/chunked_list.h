@@ -16,8 +16,8 @@ extern "C" {
 /// Error code for memory allocation failure
 #define CHUNKLIST_ERROR_ALLOCATION_FAILED -2
 
-/// Chunk size definition (128 KB)
-#define CHUNKLIST_CHUNK_SIZE (128 * 1024)
+/// Chunk size definition (16 KB)
+#define CHUNKLIST_CHUNK_SIZE (16 * 1024)
 
 /// Opaque type for the chunked list handle
 typedef void* CHUNKLIST_HANDLE;
@@ -28,9 +28,10 @@ typedef void* CHUNKLIST_HANDLE;
  * Allocates a new chunked list capable of holding items of a specified size.
  *
  * @param item_size The size of each item in the list.
+ * @param chunk_size The size of each chunk in the list.
  * @return A handle to the new chunked list, or NULL if memory allocation fails.
  */
-CHUNKLIST_HANDLE chunklist_create(size_t item_size);
+CHUNKLIST_HANDLE chunklist_create(size_t item_size, size_t chunk_size);
 
 /**
  * @brief Deletes a chunked list and frees all resources.
