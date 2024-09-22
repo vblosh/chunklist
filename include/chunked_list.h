@@ -55,6 +55,17 @@ int chunklist_delete(CHUNKLIST_HANDLE list);
 int chunklist_at(CHUNKLIST_HANDLE list, size_t index, void** item);
 
 /**
+ * @brief Expands the chunked list for a new item.
+ *
+ * Expands the chunked list for a new item and return the address of the item back.
+ *
+ * @param list A handle to the chunked list.
+ * @param item Pointer to a pointer where the retrieved item will be stored.
+ * @return CHUNKLIST_SUCCESS on success, or CHUNKLIST_ERROR_ALLOCATION_FAILED if memory allocation fails.
+ */
+int chunklist_expand(CHUNKLIST_HANDLE list, void** pnewItem);
+
+/**
  * @brief Adds a new item to the chunked list.
  *
  * Adds the provided item to the end of the chunked list.

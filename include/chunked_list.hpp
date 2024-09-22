@@ -35,10 +35,24 @@ public:
         own_container_ = own_container;  
     }
 
+	// Emplace a new object in the chunk list using perfect forwarding
+    template <typename... Args>
+    void emplace(Args&&... args) {
+        void* newItemPtr = nullptr;
+
+        // Expand the chunk list to allocate space for the new item
+        if (chunklist_expand(chunklist_, &newItemPtr) != CHUNKLIST_SUCCESS) {
+            throw std::bad_alloc();
+        }
+
+        // Construct the new object in the allocated space using placement new
+        new (newItemPtr) T(std::forward<Args>(args)...);
+    }
+	
     // Add an item to the chunklist
     void add(const T& item) {
         if (chunklist_add(chunklist_, (void*)&item) != CHUNKLIST_SUCCESS) {
-            throw std::runtime_error("Failed to add item to chunklist.");
+            throw std::bad_alloc();
         }
     }
 
@@ -48,7 +62,7 @@ public:
         if (chunklist_at(chunklist_, index, &item_ptr) != CHUNKLIST_SUCCESS) {
             throw std::out_of_range("Index out of range.");
         }
-        return *(T*)item_ptr;  // Return the item as reference
+        return *reinterpret_cast<T*>(item_ptr);  // Return the item as reference
     }
 
     // Operator[] to access items by index

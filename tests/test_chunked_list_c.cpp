@@ -22,12 +22,13 @@ protected:
 TEST_F(ChunklistTest, AddAndRetrieveItem) {
     int item1 = 42;
     int item2 = 99;
+	int* pitem2;
 
     EXPECT_EQ(chunklist_add(list, &item1), CHUNKLIST_SUCCESS);
 	EXPECT_EQ(chunklist_count(list), 1UL); // count == 1
-    EXPECT_EQ(chunklist_add(list, &item2), CHUNKLIST_SUCCESS);
+    EXPECT_EQ(chunklist_expand(list, (void**)&pitem2), CHUNKLIST_SUCCESS);
 	EXPECT_EQ(chunklist_count(list), 2UL); // count == 2
-
+	*pitem2 = item2;
 
     int* retrieved_item;
     EXPECT_EQ(chunklist_at(list, 0, (void**)&retrieved_item), CHUNKLIST_SUCCESS);

@@ -25,9 +25,8 @@ TEST_F(ChunklistTest, AddAndRetrieveItem) {
 
     plist->add(item1);
 	EXPECT_EQ(plist->size(), 1UL); // count == 1
-    plist->add(item2);
+	plist->emplace(item2);
 	EXPECT_EQ(plist->size(), 2UL); // count == 2
-
 
     EXPECT_EQ(plist->at(0), 42);
     EXPECT_EQ((*plist)[1], 99);

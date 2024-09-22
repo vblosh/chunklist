@@ -11,12 +11,12 @@ typedef struct Chunk {
 
 typedef struct {
     size_t item_size;    // Size of each item
-    size_t total_items;  // Total number of items in the container
+    size_t total_items;  // Total number of items in the chunklist
     Chunk* head;         // Pointer to the first chunk
     Chunk* tail;         // Pointer to the last chunk
 } ChunkedList;
 
-// Function to create a new container
+// Function to create a new chunklist
 CHUNKLIST_HANDLE chunklist_create(size_t item_size) {
     ChunkedList* chunked_list = (ChunkedList*)malloc(sizeof(ChunkedList));
     if (!chunked_list) {
@@ -31,7 +31,7 @@ CHUNKLIST_HANDLE chunklist_create(size_t item_size) {
     return chunked_list;
 }
 
-// Function to delete the container and free all resources
+// Function to delete the chunklist and free all resources
 int chunklist_delete(CHUNKLIST_HANDLE list) {
     chunklist_clear(list);
     free(list);
@@ -64,8 +64,8 @@ Chunk* create_chunk(size_t chunk_size) {
     return chunk;
 }
 
-// Function to chunklist_add an item to the container
-int chunklist_add(CHUNKLIST_HANDLE list, void* item) {
+// Function to expands the chunked list for a new item
+int chunklist_expand(CHUNKLIST_HANDLE list, void** pnewItem) {
     ChunkedList* chunked_list = (ChunkedList*)list;
     
     // Check if the tail chunk is full or doesn't exist
@@ -84,16 +84,31 @@ int chunklist_add(CHUNKLIST_HANDLE list, void* item) {
         chunked_list->tail = new_chunk;
     }
     
-    // Add the item to the current tail chunk
+    // Expand the current tail chunk
     void* destination = chunked_list->tail->data + chunked_list->tail->used;
-    memcpy(destination, item, chunked_list->item_size);
     chunked_list->tail->used += chunked_list->item_size;
     chunked_list->total_items++;
+	*pnewItem = destination;
+	
+    return CHUNKLIST_SUCCESS;
+}
+
+// Function to add an item to the chunklist
+int chunklist_add(CHUNKLIST_HANDLE list, void* item) {
+    ChunkedList* chunked_list = (ChunkedList*)list;
+    
+    // Add the item to the current tail chunk
+    void* destination; 
+	int error_code = chunklist_expand(list, &destination);
+	if(CHUNKLIST_SUCCESS != error_code)
+		return error_code;
+	
+    memcpy(destination, item, chunked_list->item_size);
     
     return CHUNKLIST_SUCCESS;
 }
 
-// Function to retrieve an item chunklist_at a specific index
+// Function to retrieve an item at a specific index
 int chunklist_at(CHUNKLIST_HANDLE list, size_t index, void** item) {
     ChunkedList* chunked_list = (ChunkedList*)list;
     if (index >= chunked_list->total_items) {
@@ -116,7 +131,7 @@ int chunklist_at(CHUNKLIST_HANDLE list, size_t index, void** item) {
     return CHUNKLIST_ERROR_INVALID_INDEX;
 }
 
-// Function to chunklist_remove an item chunklist_at a specific index
+// Function to remove an item at a specific index
 int chunklist_remove(CHUNKLIST_HANDLE list, size_t index) {
     ChunkedList* chunked_list = (ChunkedList*)list;
     if (index >= chunked_list->total_items) {
@@ -152,7 +167,7 @@ int chunklist_remove(CHUNKLIST_HANDLE list, size_t index) {
     return CHUNKLIST_ERROR_INVALID_INDEX;
 }
 
-// Function to get the total number of items in the container
+// Function to get the total number of items in the chunklist
 size_t chunklist_count(CHUNKLIST_HANDLE list) {
     ChunkedList* chunked_list = (ChunkedList*)list;
     return chunked_list->total_items;

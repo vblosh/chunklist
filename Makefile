@@ -11,6 +11,7 @@ SRC_DIR = ./src
 OBJ_DIR = ./obj
 LIB_DIR = ./lib
 TEST_DIR = ./tests
+BIN_DIR = ./bin
 
 # GTest library path
 GTEST_DIR = /home/pnp/src/vcpkg/installed/x64-linux
@@ -26,8 +27,8 @@ CPP_TEST_SOURCES = $(TEST_DIR)/test_chunked_list_cpp.cpp
 
 # Targets
 LIBRARY = $(LIB_DIR)/libchunked_list.a
-C_TEST_EXEC = test_chunked_list_c
-CPP_TEST_EXEC = test_chunked_list_cpp
+C_TEST_EXEC = $(BIN_DIR)/test_chunked_list_c
+CPP_TEST_EXEC = $(BIN_DIR)/test_chunked_list_cpp
 
 # All target
 all: $(LIBRARY) $(C_TEST_EXEC) $(CPP_TEST_EXEC)
@@ -41,11 +42,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile and link the C test executable
-$(C_TEST_EXEC): $(C_TEST_SOURCES) $(LIBRARY)
+$(C_TEST_EXEC): $(C_TEST_SOURCES) $(LIBRARY) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $(C_TEST_SOURCES) $(LDFLAGS) $(GTEST_LIBS) -o $@
 
 # Compile and link the C++ test executable
-$(CPP_TEST_EXEC): $(CPP_TEST_SOURCES) $(LIBRARY)
+$(CPP_TEST_EXEC): $(CPP_TEST_SOURCES) $(LIBRARY) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) $(CPP_TEST_SOURCES) $(LDFLAGS) $(GTEST_LIBS) -o $@
 
 # Create object directory
@@ -55,14 +56,17 @@ $(OBJ_DIR):
 # Create library directory
 $(LIB_DIR):
 	mkdir -p $(LIB_DIR)
+	
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
 
 # Run tests
 test: all
-	./$(C_TEST_EXEC)
-	./$(CPP_TEST_EXEC)
+	$(C_TEST_EXEC)
+	$(CPP_TEST_EXEC)
 
 # Clean up object files, libraries, and executables
 clean:
-	rm -rf $(OBJ_DIR) $(LIB_DIR) $(C_TEST_EXEC) $(CPP_TEST_EXEC)
+	rm -rf $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR)
 
 .PHONY: all clean test
