@@ -5,33 +5,33 @@
 #include "chunked_list.h"  // Include the C container implementation
 
 namespace container {
-	namespace chunklist {
+	namespace chunked_list {
 
-// C++ Template class wrapping the C chunklist
+// C++ Template class wrapping the C chunked_list
 template <typename T>
-class Chunklist {
+class ChunkedList {
 public:
     // Constructor
-    Chunklist(size_t chunk_size = CHUNKLIST_CHUNK_SIZE) : chunklist_(nullptr), own_container_(true) {
-        chunklist_ = chunklist_create(sizeof(T), chunk_size);
-        if (!chunklist_) {
-            throw std::runtime_error("Failed to create chunklist.");
+    ChunkedList(size_t chunk_size = CHUNKED_LIST_CHUNK_SIZE) : chunked_list_(nullptr), own_container_(true) {
+        chunked_list_ = chunked_list_create(sizeof(T), chunk_size);
+        if (!chunked_list_) {
+            throw std::runtime_error("Failed to create chunked_list.");
         }
     }
 
     // Destructor
-    ~Chunklist() {
-        if (own_container_ && chunklist_) {
-            chunklist_delete(chunklist_); // Clean up the existing chunklist if it owns it
+    ~ChunkedList() {
+        if (own_container_ && chunked_list_) {
+            chunked_list_delete(chunked_list_); // Clean up the existing chunked_list if it owns it
         }
     }
 
-    // Attach to an existing C-style chunklist
-    void attach(CHUNKLIST_HANDLE list, bool own_container=false) {
-        if (own_container_ && chunklist_) {
-            chunklist_delete(chunklist_); // Clean up the existing chunklist if it owns it
+    // Attach to an existing C-style chunked_list
+    void attach(CHUNKED_LIST_HANDLE list, bool own_container=false) {
+        if (own_container_ && chunked_list_) {
+            chunked_list_delete(chunked_list_); // Clean up the existing chunked_list if it owns it
         }
-        chunklist_ = list;
+        chunked_list_ = list;
         own_container_ = own_container;  
     }
 
@@ -41,7 +41,7 @@ public:
         void* newItemPtr = nullptr;
 
         // Expand the chunk list to allocate space for the new item
-        if (chunklist_expand(chunklist_, &newItemPtr) != CHUNKLIST_SUCCESS) {
+        if (chunked_list_expand(chunked_list_, &newItemPtr) != CHUNKED_LIST_SUCCESS) {
             throw std::bad_alloc();
         }
 
@@ -49,17 +49,17 @@ public:
         new (newItemPtr) T(std::forward<Args>(args)...);
     }
 	
-    // Add an item to the chunklist
+    // Add an item to the chunked_list
     void add(const T& item) {
-        if (chunklist_add(chunklist_, (void*)&item) != CHUNKLIST_SUCCESS) {
+        if (chunked_list_add(chunked_list_, (void*)&item) != CHUNKED_LIST_SUCCESS) {
             throw std::bad_alloc();
         }
     }
 
-    // Get an item chunklist_at a specific index as a reference
+    // Get an item chunked_list_at a specific index as a reference
     T& at(size_t index) {
         void* item_ptr = nullptr;
-        if (chunklist_at(chunklist_, index, &item_ptr) != CHUNKLIST_SUCCESS) {
+        if (chunked_list_at(chunked_list_, index, &item_ptr) != CHUNKED_LIST_SUCCESS) {
             throw std::out_of_range("Index out of range.");
         }
         return *reinterpret_cast<T*>(item_ptr);  // Return the item as reference
@@ -67,31 +67,31 @@ public:
 
     // Operator[] to access items by index
     T& operator[](size_t index) {
-        return at(index);  // Use the chunklist_at method to retrieve the item
+        return at(index);  // Use the chunked_list_at method to retrieve the item
     }
 
-    // Remove an item chunklist_at a specific index
+    // Remove an item chunked_list_at a specific index
     void remove(size_t index) {
-        if (chunklist_remove(chunklist_, index) != CHUNKLIST_SUCCESS) {
+        if (chunked_list_remove(chunked_list_, index) != CHUNKED_LIST_SUCCESS) {
             throw std::out_of_range("Failed to remove item: Index out of range.");
         }
     }
 
-    // Clear the chunklist
+    // Clear the chunked_list
     void clear() {
-        if (chunklist_clear(chunklist_) != CHUNKLIST_SUCCESS) {
-            throw std::runtime_error("Failed to clear chunklist.");
+        if (chunked_list_clear(chunked_list_) != CHUNKED_LIST_SUCCESS) {
+            throw std::runtime_error("Failed to clear chunked_list.");
         }
     }
 
-    // Get the size of the chunklist (number of items)
+    // Get the size of the chunked_list (number of items)
     size_t size() const {
-        return chunklist_count(chunklist_);  // Use the chunklist_count function to get the size
+        return chunked_list_count(chunked_list_);  // Use the chunked_list_count function to get the size
     }
 
 private:
-    CHUNKLIST_HANDLE chunklist_;       // The handle to the C-style chunklist
-    bool own_container_;     // Flag to indicate ownership of the chunklist
+    CHUNKED_LIST_HANDLE chunked_list_;       // The handle to the C-style chunked_list
+    bool own_container_;     // Flag to indicate ownership of the chunked_list
 };
 
 	}
