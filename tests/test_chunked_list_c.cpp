@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "chunked_list.h"  // Include your chunked_list implementation header file
+#include "chunked_list.h"  
+#include "chunked_list_iterator.h"  
 
 // Test Fixture Class
 class ChunkedListTest : public ::testing::Test {
@@ -14,7 +15,7 @@ protected:
 
     void TearDown() override {
         // Clean up the chunked_list after each test
-        chunked_list_delete(list);
+        chunked_list_destroy(list);
     }
 };
 
@@ -119,6 +120,14 @@ TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
 		EXPECT_EQ(chunked_list_at(list, idx, (void**)&retrieved_item), CHUNKED_LIST_SUCCESS);
 		EXPECT_EQ(*retrieved_item, idx);
 		EXPECT_EQ(chunked_list_count(list), (size_t)(idx+1));
+	}
+	
+	int cur_value = 0;
+	CHUNKED_LIST_ITERATOR_HANDLE iter = chunked_list_iterator_create(list);
+	while(chunked_list_iterator_is_end(iter) != 1) {
+		ASSERT_EQ(chunked_list_iterator_get(iter,(void**)&retrieved_item), CHUNKED_LIST_ITERATOR_SUCCESS);
+		ASSERT_EQ(*retrieved_item, cur_value++);
+		ASSERT_EQ(chunked_list_iterator_next(iter), CHUNKED_LIST_ITERATOR_SUCCESS);
 	}
 	
     // Remove 

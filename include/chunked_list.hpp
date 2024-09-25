@@ -2,7 +2,8 @@
 #define CHUNKED_LIST_HPP
 
 #include <stdexcept>
-#include "chunked_list.h"  // Include the C container implementation
+#include "chunked_list.h"  
+#include "chunked_list_iterator.h"
 
 namespace container {
 	namespace chunked_list {
@@ -22,14 +23,14 @@ public:
     // Destructor
     ~ChunkedList() {
         if (own_container_ && chunked_list_) {
-            chunked_list_delete(chunked_list_); // Clean up the existing chunked_list if it owns it
+            chunked_list_destroy(chunked_list_); // Clean up the existing chunked_list if it owns it
         }
     }
 
     // Attach to an existing C-style chunked_list
     void attach(CHUNKED_LIST_HANDLE list, bool own_container=false) {
         if (own_container_ && chunked_list_) {
-            chunked_list_delete(chunked_list_); // Clean up the existing chunked_list if it owns it
+            chunked_list_destroy(chunked_list_); // Clean up the existing chunked_list if it owns it
         }
         chunked_list_ = list;
         own_container_ = own_container;  
@@ -88,7 +89,87 @@ public:
     size_t size() const {
         return chunked_list_count(chunked_list_);  // Use the chunked_list_count function to get the size
     }
+	
+class iterator {
+	public:
+	    // Iterator traits
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
 
+    // Constructor: Takes a handle to a chunked list and initializes the iterator
+    iterator(ChunkedList<T>& list, size_t start_index)
+        : c_iterator(chunked_list_iterator_create(list.chunked_list_)), currentItem(nullptr) {
+        if (c_iterator == nullptr) 
+			throw std::bad_alloc();
+    }
+
+    // Destructor: Cleans up the C iterator
+    ~iterator() {
+		chunked_list_iterator_destroy(c_iterator);
+    }
+
+    // Dereference operator to access the current item
+    T& operator*() {
+		if(CHUNKED_LIST_ITERATOR_SUCCESS != chunked_list_iterator_get(c_iterator, (void**)&currentItem))
+			throw std::out_of_range("Failed to get item: Index out of range.");
+
+        return *currentItem;
+    }
+
+    // Pointer access operator to access the current item
+    T* operator->() {
+ 		if(chunked_list_iterator_get(c_iterator, (void**)&currentItem) != CHUNKED_LIST_ITERATOR_SUCCESS)
+			throw std::out_of_range("Failed to get item: Index out of range.");
+
+       return currentItem;
+    }
+
+    // Prefix increment to move to the next item
+    iterator& operator++() {
+        if(chunked_list_iterator_next(c_iterator) != CHUNKED_LIST_ITERATOR_SUCCESS)
+			throw std::out_of_range("Failed to move iterator: Index out of range.");
+        return *this;
+    }
+
+    size_t index() const {
+        return chunked_list_iterator_get_index(c_iterator);
+    }
+
+	//// Post-increment operator
+	//iterator operator++(int) {
+	//	iterator tmp = *this;
+	//	operator++();
+	//	return tmp;
+	//}
+	
+	// Equality comparison
+	bool operator==(const iterator& other) const {
+		return index() == other.index();
+	}
+
+	// Inequality comparison
+	bool operator!=(const iterator& other) const {
+		return index() != other.index();
+	}
+	
+private:
+    CHUNKED_LIST_ITERATOR_HANDLE c_iterator; // The C iterator handle
+	T* currentItem;    
+};
+
+    // Return iterator pointing to the first element
+    iterator begin() {
+        return iterator(*this, 0);
+    }
+
+    // Return iterator pointing to one past the last element
+    iterator end() {
+        return iterator(*this, size());
+    }
+	
 private:
     CHUNKED_LIST_HANDLE chunked_list_;       // The handle to the C-style chunked_list
     bool own_container_;     // Flag to indicate ownership of the chunked_list

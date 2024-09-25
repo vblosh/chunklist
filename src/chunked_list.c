@@ -2,20 +2,7 @@
 #include <string.h>
 
 #include "chunked_list.h"
-
-typedef struct Chunk {
-    struct Chunk* next;
-    size_t used;  // Number of bytes used in this chunk
-    char data[];  // Flexible array member to hold items
-} Chunk;
-
-typedef struct {
-    size_t item_size;    // Size of each item
-	size_t chunk_size;	 // Size of each chunk
-    size_t total_items;  // Total number of items in the chunked_list
-    Chunk* head;         // Pointer to the first chunk
-    Chunk* tail;         // Pointer to the last chunk
-} ChunkedList;
+#include "chunked_list_imp.h"
 
 // Function to create a new chunked_list
 CHUNKED_LIST_HANDLE chunked_list_create(size_t item_size, size_t chunk_size) {
@@ -34,7 +21,7 @@ CHUNKED_LIST_HANDLE chunked_list_create(size_t item_size, size_t chunk_size) {
 }
 
 // Function to delete the chunked_list and free all resources
-int chunked_list_delete(CHUNKED_LIST_HANDLE list) {
+int chunked_list_destroy(CHUNKED_LIST_HANDLE list) {
     chunked_list_clear(list);
     free(list);
     return CHUNKED_LIST_SUCCESS;

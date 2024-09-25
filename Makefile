@@ -2,24 +2,28 @@
 CC = gcc
 CXX = g++
 AR = ar
-CFLAGS = -Wall -Werror -g -I./include
-CXXFLAGS = -Wall -Werror -g -I./include -I$(GTEST_DIR)/include
-LDFLAGS = -L./lib -lchunked_list -lpthread
+
+CINCLUDE = -I$(INC_DIR)
+CXXINCLUDE = -I$(INC_DIR) -I$(GTEST_DIR)/include
+CFLAGS = -Wall -Werror -g $(CINCLUDE)
+CXXFLAGS = -Wall -Werror -g $(CXXINCLUDE)
+LDFLAGS = -L$(LIB_DIR) -lchunked_list -lpthread
 
 # Paths to source files, object files, and library
-SRC_DIR = ./src
-OBJ_DIR = ./obj
-LIB_DIR = ./lib
-TEST_DIR = ./tests
-BIN_DIR = ./bin
+INC_DIR = include
+SRC_DIR = src
+OBJ_DIR = obj
+LIB_DIR = lib
+TEST_DIR = tests
+BIN_DIR = bin
 
 # GTest library path
 GTEST_DIR = /home/pnp/src/vcpkg/installed/x64-linux
 GTEST_LIBS = -L$(GTEST_DIR)/lib -lgtest # -lgtest_main
 
 # Source and object files for the chunked list
-C_SOURCES = $(SRC_DIR)/chunked_list.c
-C_OBJECTS = $(OBJ_DIR)/chunked_list.o
+C_SOURCES = $(wildcard $(SRC_DIR)/*.c)
+C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
 
 # Test files
 C_TEST_SOURCES = $(TEST_DIR)/test_chunked_list_c.cpp

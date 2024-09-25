@@ -41,7 +41,7 @@ CHUNKED_LIST_HANDLE chunked_list_create(size_t item_size, size_t chunk_size);
  * @param list A handle to the chunked list.
  * @return CHUNKED_LIST_SUCCESS on success, or an error code on failure.
  */
-int chunked_list_delete(CHUNKED_LIST_HANDLE list);
+int chunked_list_destroy(CHUNKED_LIST_HANDLE list);
 
 /**
  * @brief Retrieves an item at a specific index in the chunked list.
