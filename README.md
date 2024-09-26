@@ -81,9 +81,9 @@ The C++ wrapper provides a more convenient interface for C++ users.
 1. Using the C++ Wrapper
 ```cpp
 Copy code
-#include "chunked_list_cpp.h"
+#include "chunked_list.hpp"
 
-ChunkedListWrapper<MyStruct> list;
+ChunkedList<MyStruct> list(sizeof(MyStruct)*100); // chunk size
 list.emplace(MyStruct{...});
 MyStruct& item = list[0];
 ```
