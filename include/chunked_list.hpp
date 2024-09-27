@@ -100,10 +100,18 @@ class iterator {
         using reference = T&;
 
     // Constructor: Takes a handle to a chunked list and initializes the iterator
-    iterator(ChunkedList<T>& list, size_t start_index)
-        : c_iterator(chunked_list_iterator_create(list.chunked_list_)), currentItem(nullptr) {
-        if (c_iterator == nullptr) 
-			throw std::bad_alloc();
+    // or create an end iterator if the handle is null
+    iterator(ChunkedList<T>* list)
+        : currentItem(nullptr) 
+    {
+        if (list) {
+            c_iterator = chunked_list_iterator_create(list->chunked_list_);
+            if (c_iterator == nullptr)
+                throw std::bad_alloc();
+        }
+        else { // create end iterator
+            c_iterator = nullptr;
+        }
     }
 
     // Destructor: Cleans up the C iterator
@@ -147,12 +155,15 @@ class iterator {
 	
 	// Equality comparison
 	bool operator==(const iterator& other) const {
-		return index() == other.index();
+        if (other.c_iterator)
+            return index() == other.index();
+        else // other is an end iterator
+            return chunked_list_iterator_is_end(c_iterator) == 1;
 	}
 
 	// Inequality comparison
 	bool operator!=(const iterator& other) const {
-		return index() != other.index();
+		return !operator==(other);
 	}
 	
 private:
@@ -162,12 +173,12 @@ private:
 
     // Return iterator pointing to the first element
     iterator begin() {
-        return iterator(*this, 0);
+        return iterator(this);
     }
 
     // Return iterator pointing to one past the last element
     iterator end() {
-        return iterator(*this, size());
+        return iterator(nullptr);
     }
 	
 private:

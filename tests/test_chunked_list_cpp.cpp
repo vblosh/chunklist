@@ -115,11 +115,14 @@ TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
 	for(auto it=plist->begin(); it != plist->end(); ++it) {
 		ASSERT_EQ(*it, cur_value++);
 	}
+    EXPECT_EQ(cur_value, plist->size());
 	
-	//for(int& value : *plist) {
-	//	ASSERT_EQ(value, cur_value++);
-	//}
-	
+    cur_value = 0;
+	for(int& value : *plist) {
+		ASSERT_EQ(value, cur_value++);
+	}
+    EXPECT_EQ(cur_value, plist->size());
+
     // Remove 
 	int idx = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 2 + 4;
     plist->remove(idx);

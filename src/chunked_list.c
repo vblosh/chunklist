@@ -134,8 +134,8 @@ int chunked_list_remove(CHUNKED_LIST_HANDLE list, size_t index) {
         size_t chunk_items = current_chunk->used / chunked_list->item_size;
         if (items_to_skip < chunk_items) {
             // Found the chunk containing the item to chunked_list_remove
-            void* item_to_remove = current_chunk->data + items_to_skip * chunked_list->item_size;
-            void* next_item = item_to_remove + chunked_list->item_size;
+            char* item_to_remove = current_chunk->data + items_to_skip * chunked_list->item_size;
+            char* next_item = item_to_remove + chunked_list->item_size;
             
             // Shift all items in the chunk after the item_to_remove to fill the gap
             size_t remaining_items_in_chunk = chunk_items - items_to_skip - 1;  // Items after the removed one

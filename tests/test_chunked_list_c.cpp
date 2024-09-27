@@ -129,6 +129,7 @@ TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
 		ASSERT_EQ(*retrieved_item, cur_value++);
 		ASSERT_EQ(chunked_list_iterator_next(iter), CHUNKED_LIST_ITERATOR_SUCCESS);
 	}
+	chunked_list_iterator_destroy(iter);
 	
     // Remove 
 	int idx = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 2 + 4;
