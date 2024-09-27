@@ -65,11 +65,11 @@ int chunked_list_iterator_next(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
 
 int chunked_list_iterator_is_end(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
     ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
-    return (iterator->global_index >= iterator->list->total_items);
+    return (iterator->global_index >= iterator->list->total_items) ? 1 : 0;
 }
 
 size_t chunked_list_iterator_get_index(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle)
 {
-    ChunkListIterator* iterator = (ChunkListIterator*)iterator;
+    ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
     return iterator->global_index;
 }

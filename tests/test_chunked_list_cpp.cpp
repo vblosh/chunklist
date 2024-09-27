@@ -102,36 +102,56 @@ TEST_F(ChunkedListTest, ClearChunkedList) {
 }
 
 // Test: Adding and retrieving items from the chunked_list
-TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
+TEST_F(ChunkedListTest, IteratorTests) {
 	int COUNT = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 4;
 
  	for(int idx=0; idx < COUNT; ++idx) {
 		plist->add(idx);
-		ASSERT_EQ(plist->at(idx), idx);
-		EXPECT_EQ(plist->size(), (size_t)(idx+1));
 	}
 	
 	int cur_value = 0;
 	for(auto it=plist->begin(); it != plist->end(); ++it) {
 		ASSERT_EQ(*it, cur_value++);
 	}
+    EXPECT_EQ((size_t)cur_value, plist->size());
 	
-	//for(int& value : *plist) {
-	//	ASSERT_EQ(value, cur_value++);
-	//}
-	
+    cur_value = 0;
+	for(int& value : *plist) {
+		ASSERT_EQ(value, cur_value++);
+	}
+    EXPECT_EQ((size_t)cur_value, plist->size());
+
+    auto it1 = plist->begin();
+    auto it2 = plist->begin();
+    EXPECT_EQ(it1, it2);
+
+    for (size_t i = 0; i < plist->size(); i++)
+    {
+        ASSERT_EQ(++it1, ++it2);
+    }
+}
+
+TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
+    int COUNT = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 4;
+
+    for (int idx = 0; idx < COUNT; ++idx) {
+        plist->add(idx);
+        ASSERT_EQ(plist->at(idx), idx);
+        EXPECT_EQ(plist->size(), (size_t)(idx + 1));
+    }
+
     // Remove 
-	int idx = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 2 + 4;
+    int idx = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 2 + 4;
     plist->remove(idx);
-	EXPECT_EQ(plist->size(), (size_t)(COUNT - 1)); 
+    EXPECT_EQ(plist->size(), (size_t)(COUNT - 1));
 
     // After removal, the item plist->at index should now be idx+1
-    EXPECT_EQ(plist->at(idx), idx+1);
-	
-	    // Remove 
-	idx = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 1 + 100;
+    EXPECT_EQ(plist->at(idx), idx + 1);
+
+    // Remove 
+    idx = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 1 + 100;
     plist->remove(idx);
-	EXPECT_EQ(plist->size(), (size_t)(COUNT - 2)); 
+    EXPECT_EQ(plist->size(), (size_t)(COUNT - 2));
 
     // After removal, the item plist->at index (COUNT - 2) should now be COUNT
     EXPECT_EQ(plist->at(COUNT - 2 - 1), COUNT - 1);
