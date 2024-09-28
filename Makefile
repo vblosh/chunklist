@@ -24,17 +24,16 @@ GTEST_DIR = /home/pnp/src/vcpkg/installed/x64-linux
 GTEST_LIBS = -L$(GTEST_DIR)/lib -lgtest # -lgtest_main
 
 # Source and object files for the chunked list
-C_SOURCES = $(wildcard $(SRC_DIR)/*.c)
-C_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(C_SOURCES))
+LIB_SOURCES = $(wildcard $(SRC_DIR)/*.c)
+LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(LIB_SOURCES))
 
-# Test files
-C_TEST_SOURCES = $(TEST_DIR)/test_chunked_list_c.cpp
-CPP_TEST_SOURCES = $(TEST_DIR)/test_chunked_list_cpp.cpp
+# Source and object files tests
+TEST_SOURCES = $(wildcard $(TEST_DIR)/*.cpp)
+TEST_OBJECTS = $(patsubst $(TEST_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(TEST_SOURCES))
 
 # Targets
 LIBRARY = $(LIB_DIR)/libchunked_list.a
-C_TEST_EXEC = $(BIN_DIR)/test_chunked_list_c
-CPP_TEST_EXEC = $(BIN_DIR)/test_chunked_list_cpp
+TEST_EXEC = $(BIN_DIR)/tests
 
 # All target
 # Default build target (can be rel, dbg, or san)
@@ -44,7 +43,7 @@ all: rel
 dbg: CFLAGS = $(CXXFLAGS_DBG)
 dbg: CXXFLAGS = $(CXXFLAGS_DBG)
 dbg: LDFLAGS = $(LDFLAGS_DBG)
-dbg: $(LIBRARY) $(C_TEST_EXEC) $(CPP_TEST_EXEC)
+dbg: $(LIBRARY) $(TEST_EXEC)
 
 # Release build target
 rel: CFLAGS = $(CXXFLAGS_REL)
@@ -55,12 +54,11 @@ rel: $(LIBRARY)
 san: CFLAGS = $(CXXFLAGS_SAN)
 san: CXXFLAGS = $(CXXFLAGS_SAN)
 san: LDFLAGS = $(LDFLAGS_SAN)
-san: $(LIBRARY) $(C_TEST_EXEC) $(CPP_TEST_EXEC)
+san: $(LIBRARY) $(TEST_EXEC)
 
 # Run tests
 test: san
-	$(C_TEST_EXEC)
-	$(CPP_TEST_EXEC)
+	$(TEST_EXEC)
 
 # Clean up object files, libraries, and executables
 clean:
@@ -68,33 +66,25 @@ clean:
 
 .PHONY: all clean test dbg rel
 
-# Create the static library
-$(LIBRARY): $(C_OBJECTS) | $(LIB_DIR)
-	$(AR) rcs $@ $^
-
 # Compile C source files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 	
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Compile and link the C test executable
-$(C_TEST_EXEC): $(C_TEST_SOURCES) $(LIBRARY) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(C_TEST_SOURCES) $(LDFLAGS) $(GTEST_LIBS) -o $@
+# Create the static library
+$(LIBRARY): $(LIB_OBJECTS)
+	mkdir -p $(LIB_DIR)
+	$(AR) rcs $@ $^
 
-# Compile and link the C++ test executable
-$(CPP_TEST_EXEC): $(CPP_TEST_SOURCES) $(LIBRARY) | $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(CPP_TEST_SOURCES) $(LDFLAGS) $(GTEST_LIBS) -o $@
+# Rule to build the executable
+$(TEST_EXEC): $(TEST_OBJECTS)
+	@mkdir -p $(BIN_DIR)   # Create the bin directory if it doesn't exist
+	@echo $(TEST_OBJECTS)
+	$(CXX) $(TEST_OBJECTS) $(LDFLAGS) $(GTEST_LIBS) -o $@
 
 # Create object directory
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
-
-# Create library directory
-$(LIB_DIR):
-	mkdir -p $(LIB_DIR)
-	
-$(BIN_DIR):
-	mkdir -p $(BIN_DIR)
 
