@@ -151,3 +151,35 @@ TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
 
 }
 
+TEST_F(ChunkedListTest, IteratorReportsIndexAndEndErrors) {
+    CHUNKED_LIST_ITERATOR_HANDLE iter = chunked_list_iterator_create(list);
+    ASSERT_NE(iter, nullptr);
+
+    void* item = nullptr;
+    EXPECT_EQ(chunked_list_iterator_get_index(iter), 0UL);
+    EXPECT_EQ(chunked_list_iterator_is_end(iter), 1);
+    EXPECT_EQ(chunked_list_iterator_get(iter, &item), CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX);
+    EXPECT_EQ(chunked_list_iterator_next(iter), CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX);
+    chunked_list_iterator_destroy(iter);
+
+    int first = 10;
+    int second = 20;
+    ASSERT_EQ(chunked_list_add(list, &first), CHUNKED_LIST_SUCCESS);
+    ASSERT_EQ(chunked_list_add(list, &second), CHUNKED_LIST_SUCCESS);
+
+    iter = chunked_list_iterator_create(list);
+    ASSERT_NE(iter, nullptr);
+    EXPECT_EQ(chunked_list_iterator_get_index(iter), 0UL);
+    ASSERT_EQ(chunked_list_iterator_next(iter), CHUNKED_LIST_ITERATOR_SUCCESS);
+    EXPECT_EQ(chunked_list_iterator_get_index(iter), 1UL);
+    ASSERT_EQ(chunked_list_iterator_next(iter), CHUNKED_LIST_ITERATOR_SUCCESS);
+    EXPECT_EQ(chunked_list_iterator_get_index(iter), 2UL);
+    EXPECT_EQ(chunked_list_iterator_is_end(iter), 1);
+    EXPECT_EQ(chunked_list_iterator_get(iter, &item), CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX);
+    EXPECT_EQ(chunked_list_iterator_next(iter), CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX);
+    chunked_list_iterator_destroy(iter);
+}
+
+TEST(ChunkedListIteratorTest, DestroyAcceptsNullHandle) {
+    chunked_list_iterator_destroy(nullptr);
+}

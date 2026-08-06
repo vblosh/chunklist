@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 
+#include <string>
+#include <utility>
+
 #include "chunked_list.hpp"  // Include your chunked_list implementation header file
 
 // Test Fixture Class
@@ -68,17 +71,13 @@ TEST_F(ChunkedListTestCpp, AccessInvalidIndex) {
 
 // Test: Removing an invalid index
 TEST_F(ChunkedListTestCpp, RemoveInvalidIndex) {
-    // Try removing from an empty list
-    EXPECT_THROW(plist->at(0), std::out_of_range);
+    EXPECT_THROW(plist->remove(0), std::out_of_range);
 
     int item1 = 42;
     plist->add(item1);
-
-    // Remove should succeed plist->at index 0
     plist->remove(0);
 
-    // Now the list is empty again, removing plist->at index 0 should fail
-    EXPECT_THROW(plist->at(0), std::out_of_range);
+    EXPECT_THROW(plist->remove(0), std::out_of_range);
 }
 
 // Test: Clearing the chunked_list
@@ -155,4 +154,69 @@ TEST_F(ChunkedListTestCpp, AddAndRetrieveRemoveManyItem) {
 
     // After removal, the item plist->at index (COUNT - 2) should now be COUNT
     EXPECT_EQ(plist->at(COUNT - 2 - 1), COUNT - 1);
+}
+
+TEST_F(ChunkedListTestCpp, AttachWithoutOwnershipLeavesContainerAlive) {
+    CHUNKED_LIST_HANDLE attached = chunked_list_create(sizeof(int), 1024);
+    ASSERT_NE(attached, nullptr);
+
+    plist->attach(attached);
+    plist->add(42);
+    EXPECT_EQ(plist->at(0), 42);
+
+    delete plist;
+    plist = nullptr;
+
+    int* item = nullptr;
+    EXPECT_EQ(chunked_list_at(attached, 0, reinterpret_cast<void**>(&item)), CHUNKED_LIST_SUCCESS);
+    ASSERT_NE(item, nullptr);
+    EXPECT_EQ(*item, 42);
+    EXPECT_EQ(chunked_list_destroy(attached), CHUNKED_LIST_SUCCESS);
+}
+
+TEST_F(ChunkedListTestCpp, AttachWithOwnershipSupportsContainerOperations) {
+    CHUNKED_LIST_HANDLE attached = chunked_list_create(sizeof(int), 1024);
+    ASSERT_NE(attached, nullptr);
+
+    plist->attach(attached, true);
+    plist->add(42);
+    EXPECT_EQ(plist->size(), 1UL);
+    EXPECT_EQ(plist->at(0), 42);
+}
+
+TEST(ChunkedListCppTest, EmplaceConstructsObjectAndIteratorArrowAccessesIt) {
+    struct Item {
+        Item(int id_value, std::string name_value)
+            : id(id_value), name(std::move(name_value)) {}
+
+        int id;
+        std::string name;
+    };
+
+    container::chunked_list::ChunkedList<Item> list(1024);
+    list.emplace(7, "seven");
+
+    auto iter = list.begin();
+    EXPECT_EQ(iter.index(), 0UL);
+    EXPECT_EQ(iter->id, 7);
+    EXPECT_EQ(iter->name, "seven");
+    EXPECT_EQ((*iter).id, 7);
+}
+
+TEST_F(ChunkedListTestCpp, EmptyAndPastEndIteratorsReportErrors) {
+    auto empty = plist->begin();
+    EXPECT_EQ(empty, plist->end());
+    EXPECT_THROW(*empty, std::out_of_range);
+    EXPECT_THROW(++empty, std::out_of_range);
+
+    plist->add(42);
+    auto iter = plist->begin();
+    EXPECT_NE(iter, plist->end());
+    EXPECT_EQ(iter.index(), 0UL);
+    EXPECT_EQ(*iter, 42);
+    EXPECT_NO_THROW(++iter);
+    EXPECT_EQ(iter.index(), 1UL);
+    EXPECT_EQ(iter, plist->end());
+    EXPECT_THROW(*iter, std::out_of_range);
+    EXPECT_THROW(++iter, std::out_of_range);
 }
