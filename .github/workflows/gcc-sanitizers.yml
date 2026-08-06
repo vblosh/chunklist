@@ -1,0 +1,28 @@
+name: GCC Sanitizers
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential libgtest-dev
+
+      - name: Build with GCC sanitizers and run tests
+        run: make --jobs=2 test CC=gcc CXX=g++ GTEST_DIR=/usr GTEST_LIBS=-lgtest
