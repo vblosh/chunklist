@@ -3,7 +3,7 @@
 #include "chunked_list.hpp"  // Include your chunked_list implementation header file
 
 // Test Fixture Class
-class ChunkedListTest : public ::testing::Test {
+class ChunkedListTestCpp : public ::testing::Test {
 protected:
     container::chunked_list::ChunkedList<int>* plist;
 
@@ -19,7 +19,7 @@ protected:
 };
 
 // Test: Adding and retrieving items from the chunked_list
-TEST_F(ChunkedListTest, AddAndRetrieveItem) {
+TEST_F(ChunkedListTestCpp, AddAndRetrieveItem) {
     int item1 = 42;
     int item2 = 99;
 
@@ -38,7 +38,7 @@ TEST_F(ChunkedListTest, AddAndRetrieveItem) {
 }
 
 // Test: Removing an item from the chunked_list
-TEST_F(ChunkedListTest, RemoveItem) {
+TEST_F(ChunkedListTestCpp, RemoveItem) {
     int item1 = 42;
     int item2 = 99;
 
@@ -55,7 +55,7 @@ TEST_F(ChunkedListTest, RemoveItem) {
 }
 
 // Test: Accessing an invalid index
-TEST_F(ChunkedListTest, AccessInvalidIndex) {
+TEST_F(ChunkedListTestCpp, AccessInvalidIndex) {
     // No items added yet, so accessing any index should fail
     EXPECT_THROW(plist->at(0), std::out_of_range);
 
@@ -67,7 +67,7 @@ TEST_F(ChunkedListTest, AccessInvalidIndex) {
 }
 
 // Test: Removing an invalid index
-TEST_F(ChunkedListTest, RemoveInvalidIndex) {
+TEST_F(ChunkedListTestCpp, RemoveInvalidIndex) {
     // Try removing from an empty list
     EXPECT_THROW(plist->at(0), std::out_of_range);
 
@@ -82,7 +82,7 @@ TEST_F(ChunkedListTest, RemoveInvalidIndex) {
 }
 
 // Test: Clearing the chunked_list
-TEST_F(ChunkedListTest, ClearChunkedList) {
+TEST_F(ChunkedListTestCpp, ClearChunkedList) {
     int item1 = 42;
     int item2 = 99;
 
@@ -102,7 +102,7 @@ TEST_F(ChunkedListTest, ClearChunkedList) {
 }
 
 // Test: Adding and retrieving items from the chunked_list
-TEST_F(ChunkedListTest, IteratorTests) {
+TEST_F(ChunkedListTestCpp, IteratorTests) {
 	int COUNT = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 4;
 
  	for(int idx=0; idx < COUNT; ++idx) {
@@ -131,7 +131,7 @@ TEST_F(ChunkedListTest, IteratorTests) {
     }
 }
 
-TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
+TEST_F(ChunkedListTestCpp, AddAndRetrieveRemoveManyItem) {
     int COUNT = CHUNKED_LIST_CHUNK_SIZE / sizeof(int) * 4;
 
     for (int idx = 0; idx < COUNT; ++idx) {
@@ -155,9 +155,4 @@ TEST_F(ChunkedListTest, AddAndRetrieveRemoveManyItem) {
 
     // After removal, the item plist->at index (COUNT - 2) should now be COUNT
     EXPECT_EQ(plist->at(COUNT - 2 - 1), COUNT - 1);
-}
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
