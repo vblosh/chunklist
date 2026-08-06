@@ -79,7 +79,7 @@ $(LIBRARY): $(LIB_OBJECTS)
 	$(AR) rcs $@ $^
 
 # Rule to build the executable
-$(TEST_EXEC): $(TEST_OBJECTS)
+$(TEST_EXEC): $(TEST_OBJECTS) $(LIBRARY)
 	@mkdir -p $(BIN_DIR)   # Create the bin directory if it doesn't exist
 	@echo $(TEST_OBJECTS)
 	$(CXX) $(TEST_OBJECTS) $(LDFLAGS) $(GTEST_LIBS) -o $@
