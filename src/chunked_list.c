@@ -6,6 +6,12 @@
 
 // Function to create a new chunked_list
 CHUNKED_LIST_HANDLE chunked_list_create(size_t item_size, size_t chunk_size) {
+    // item_size of 0 would cause division by zero in at/remove; chunk_size of 0
+    // would leave no room for any item.
+    if (item_size == 0 || chunk_size == 0 || chunk_size < item_size) {
+        return NULL;
+    }
+
     ChunkedList* chunked_list = (ChunkedList*)malloc(sizeof(ChunkedList));
     if (!chunked_list) {
         return NULL;
@@ -22,12 +28,18 @@ CHUNKED_LIST_HANDLE chunked_list_create(size_t item_size, size_t chunk_size) {
 
 // Function to delete the chunked_list and free all resources
 int chunked_list_destroy(CHUNKED_LIST_HANDLE list) {
+    if (!list) {
+        return CHUNKED_LIST_SUCCESS;
+    }
     chunked_list_clear(list);
     free(list);
     return CHUNKED_LIST_SUCCESS;
 }
 
 int chunked_list_clear(CHUNKED_LIST_HANDLE list){
+    if (!list) {
+        return CHUNKED_LIST_SUCCESS;
+    }
     ChunkedList* chunked_list = (ChunkedList*)list;
     Chunk* current = chunked_list->head;
     while (current) {
@@ -35,10 +47,10 @@ int chunked_list_clear(CHUNKED_LIST_HANDLE list){
         free(current);
         current = next;
     }
-	chunked_list->total_items = 0;
+    chunked_list->total_items = 0;
     chunked_list->head = NULL;
     chunked_list->tail = NULL;
-	
+
     return CHUNKED_LIST_SUCCESS;
 }
 
@@ -55,6 +67,9 @@ Chunk* create_chunk(size_t chunk_size) {
 
 // Function to expands the chunked list for a new item
 int chunked_list_expand(CHUNKED_LIST_HANDLE list, void** pnewItem) {
+    if (!list || !pnewItem) {
+        return CHUNKED_LIST_ERROR_INVALID_ARGUMENT;
+    }
     ChunkedList* chunked_list = (ChunkedList*)list;
     
     // Check if the tail chunk is full or doesn't exist
@@ -84,6 +99,9 @@ int chunked_list_expand(CHUNKED_LIST_HANDLE list, void** pnewItem) {
 
 // Function to add an item to the chunked_list
 int chunked_list_add(CHUNKED_LIST_HANDLE list, void* item) {
+    if (!list || !item) {
+        return CHUNKED_LIST_ERROR_INVALID_ARGUMENT;
+    }
     ChunkedList* chunked_list = (ChunkedList*)list;
     
     // Add the item to the current tail chunk
@@ -99,6 +117,9 @@ int chunked_list_add(CHUNKED_LIST_HANDLE list, void* item) {
 
 // Function to retrieve an item at a specific index
 int chunked_list_at(CHUNKED_LIST_HANDLE list, size_t index, void** item) {
+    if (!list || !item) {
+        return CHUNKED_LIST_ERROR_INVALID_ARGUMENT;
+    }
     ChunkedList* chunked_list = (ChunkedList*)list;
     if (index >= chunked_list->total_items) {
         return CHUNKED_LIST_ERROR_INVALID_INDEX;
@@ -122,6 +143,9 @@ int chunked_list_at(CHUNKED_LIST_HANDLE list, size_t index, void** item) {
 
 // Function to remove an item at a specific index
 int chunked_list_remove(CHUNKED_LIST_HANDLE list, size_t index) {
+    if (!list) {
+        return CHUNKED_LIST_ERROR_INVALID_ARGUMENT;
+    }
     ChunkedList* chunked_list = (ChunkedList*)list;
     if (index >= chunked_list->total_items) {
         return CHUNKED_LIST_ERROR_INVALID_INDEX;
@@ -156,9 +180,49 @@ int chunked_list_remove(CHUNKED_LIST_HANDLE list, size_t index) {
     return CHUNKED_LIST_ERROR_INVALID_INDEX;
 }
 
+int chunked_list_remove_managed(
+    CHUNKED_LIST_HANDLE list,
+    size_t index,
+    CHUNKED_LIST_MOVE_ASSIGN_CALLBACK move_assign,
+    CHUNKED_LIST_DESTROY_CALLBACK destroy_item) {
+    if (!list || !move_assign || !destroy_item) {
+        return CHUNKED_LIST_ERROR_INVALID_ARGUMENT;
+    }
+
+    ChunkedList* chunked_list = (ChunkedList*)list;
+    if (index >= chunked_list->total_items) {
+        return CHUNKED_LIST_ERROR_INVALID_INDEX;
+    }
+
+    size_t items_to_skip = index;
+    Chunk* current_chunk = chunked_list->head;
+    while (current_chunk) {
+        size_t chunk_items = current_chunk->used / chunked_list->item_size;
+        if (items_to_skip < chunk_items) {
+            char* destination = current_chunk->data + items_to_skip * chunked_list->item_size;
+            for (size_t i = items_to_skip; i + 1 < chunk_items; ++i) {
+                char* source = destination + chunked_list->item_size;
+                move_assign(destination, source);
+                destination = source;
+            }
+
+            destroy_item(destination);
+            current_chunk->used -= chunked_list->item_size;
+            chunked_list->total_items--;
+            return CHUNKED_LIST_SUCCESS;
+        }
+        items_to_skip -= chunk_items;
+        current_chunk = current_chunk->next;
+    }
+
+    return CHUNKED_LIST_ERROR_INVALID_INDEX;
+}
+
 // Function to get the total number of items in the chunked_list
 size_t chunked_list_count(CHUNKED_LIST_HANDLE list) {
+    if (!list) {
+        return 0;
+    }
     ChunkedList* chunked_list = (ChunkedList*)list;
     return chunked_list->total_items;
 }
-

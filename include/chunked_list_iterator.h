@@ -23,6 +23,14 @@ typedef void* CHUNKED_LIST_ITERATOR_HANDLE;
 CHUNKED_LIST_ITERATOR_HANDLE chunked_list_iterator_create(CHUNKED_LIST_HANDLE list);
 
 /**
+ * Create an independent copy of an iterator.
+ * @param iterator The iterator to copy.
+ * @return A new iterator at the same position, or NULL if the source is NULL
+ *         or allocation fails.
+ */
+CHUNKED_LIST_ITERATOR_HANDLE chunked_list_iterator_clone(CHUNKED_LIST_ITERATOR_HANDLE iterator);
+
+/**
  * Destroy the iterator.
  * @param iterator The iterator handle.
  */

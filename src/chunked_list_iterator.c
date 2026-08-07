@@ -11,6 +11,9 @@ typedef struct {
 } ChunkListIterator;
 
 CHUNKED_LIST_ITERATOR_HANDLE chunked_list_iterator_create(CHUNKED_LIST_HANDLE list) {
+    if (!list) {
+        return NULL;
+    }
     ChunkListIterator* iterator = (ChunkListIterator*)malloc(sizeof(ChunkListIterator));
     if (!iterator) {
         return NULL;
@@ -25,6 +28,21 @@ CHUNKED_LIST_ITERATOR_HANDLE chunked_list_iterator_create(CHUNKED_LIST_HANDLE li
     return iterator;
 }
 
+CHUNKED_LIST_ITERATOR_HANDLE chunked_list_iterator_clone(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
+    ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
+    if (!iterator) {
+        return NULL;
+    }
+
+    ChunkListIterator* clone = (ChunkListIterator*)malloc(sizeof(ChunkListIterator));
+    if (!clone) {
+        return NULL;
+    }
+
+    *clone = *iterator;
+    return clone;
+}
+
 void chunked_list_iterator_destroy(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
     ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
     if (iterator) {
@@ -34,6 +52,9 @@ void chunked_list_iterator_destroy(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle)
 
 int chunked_list_iterator_get(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle, void** item) {
     ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
+    if (!iterator || !item) {
+        return CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX;
+    }
 
     if (!iterator->current_chunk || iterator->global_index >= iterator->list->total_items) {
         return CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX;  // Out of bounds
@@ -45,6 +66,9 @@ int chunked_list_iterator_get(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle, void
 
 int chunked_list_iterator_next(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
     ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
+    if (!iterator) {
+        return CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX;
+    }
 
     if (!iterator->current_chunk || iterator->global_index >= iterator->list->total_items) {
         return CHUNKED_LIST_ITERATOR_ERROR_INVALID_INDEX;  // No more items
@@ -65,11 +89,17 @@ int chunked_list_iterator_next(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
 
 int chunked_list_iterator_is_end(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle) {
     ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
+    if (!iterator) {
+        return 1;
+    }
     return (iterator->global_index >= iterator->list->total_items) ? 1 : 0;
 }
 
 size_t chunked_list_iterator_get_index(CHUNKED_LIST_ITERATOR_HANDLE iterator_handle)
 {
     ChunkListIterator* iterator = (ChunkListIterator*)iterator_handle;
+    if (!iterator) {
+        return (size_t)-1;
+    }
     return iterator->global_index;
 }
