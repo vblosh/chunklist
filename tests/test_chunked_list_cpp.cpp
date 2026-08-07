@@ -220,3 +220,124 @@ TEST_F(ChunkedListTestCpp, EmptyAndPastEndIteratorsReportErrors) {
     EXPECT_THROW(*iter, std::out_of_range);
     EXPECT_THROW(++iter, std::out_of_range);
 }
+
+// Regression: create() must reject invalid dimensions.
+TEST(ChunkedListCApiTest, CreateRejectsInvalidArguments) {
+    EXPECT_EQ(chunked_list_create(0, 1024), nullptr);
+    EXPECT_EQ(chunked_list_create(sizeof(int), 0), nullptr);
+    EXPECT_EQ(chunked_list_create(sizeof(int), 1), nullptr);  // chunk smaller than item
+}
+
+// Regression: NULL handle must not crash; public functions return safe values.
+TEST(ChunkedListCApiTest, NullHandleIsSafe) {
+    EXPECT_EQ(chunked_list_destroy(nullptr), CHUNKED_LIST_SUCCESS);
+    EXPECT_EQ(chunked_list_clear(nullptr), CHUNKED_LIST_SUCCESS);
+    EXPECT_EQ(chunked_list_count(nullptr), 0UL);
+
+    void* out = nullptr;
+    EXPECT_EQ(chunked_list_add(nullptr, &out), CHUNKED_LIST_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(chunked_list_expand(nullptr, &out), CHUNKED_LIST_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(chunked_list_at(nullptr, 0, &out), CHUNKED_LIST_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(chunked_list_remove(nullptr, 0), CHUNKED_LIST_ERROR_INVALID_ARGUMENT);
+}
+
+// Regression: C++ wrapper must invoke ~T() when removing or clearing items
+// that own resources. We count destructor calls to verify. Note that add(const T&)
+// also destroys the caller's temporary at the end of the call, so we account for
+// both the temporary destructions and the in-container destructions.
+TEST(ChunkedListCppTest, RemoveAndClearInvokeDestructorsOnNonTrivialTypes) {
+    struct Counted {
+        int* destroy_counter;
+        Counted(int* c) : destroy_counter(c) {}
+        ~Counted() { ++*destroy_counter; }
+        Counted(const Counted&) = default;
+    };
+
+    int destroys = 0;
+    {
+        container::chunked_list::ChunkedList<Counted> list(1024);
+        list.add(Counted(&destroys));  // +1 temporary destroyed after add
+        list.add(Counted(&destroys));  // +1
+        list.add(Counted(&destroys));  // +1
+        EXPECT_EQ(destroys, 3);
+        EXPECT_EQ(list.size(), 3UL);
+
+        list.remove(1);  // ~T() on the stored item
+        EXPECT_EQ(destroys, 4);
+        EXPECT_EQ(list.size(), 2UL);
+
+        list.clear();    // ~T() on the two remaining stored items
+        EXPECT_EQ(destroys, 6);
+        EXPECT_EQ(list.size(), 0UL);
+
+        list.add(Counted(&destroys));  // +1 temporary, list still usable
+        EXPECT_EQ(destroys, 7);
+        EXPECT_EQ(list.size(), 1UL);
+    }  // ~ChunkedList() destroys the final stored item
+    EXPECT_EQ(destroys, 8);
+}
+
+// Regression: iterator default-constructs (required for ForwardIterator).
+TEST(ChunkedListCppTest, IteratorIsDefaultConstructibleAndSingularIteratorsCompareEqual) {
+    container::chunked_list::ChunkedList<int> list(1024);
+    container::chunked_list::ChunkedList<int>::iterator a;
+    container::chunked_list::ChunkedList<int>::iterator b;
+    EXPECT_EQ(a, b);
+}
+
+TEST(ChunkedListCppTest, PostIncrementReturnsIndependentPreviousPosition) {
+    container::chunked_list::ChunkedList<int> list(1024);
+    list.emplace(10);
+    list.emplace(20);
+
+    auto current = list.begin();
+    auto previous = current++;
+
+    EXPECT_EQ(*previous, 10);
+    EXPECT_EQ(*current, 20);
+    EXPECT_NE(previous, current);
+}
+
+TEST(ChunkedListCppTest, AddAndMiddleRemovalPreserveOwningStrings) {
+    container::chunked_list::ChunkedList<std::string> list(sizeof(std::string) * 3);
+    const std::string second = "two";
+
+    list.add(std::string("one"));
+    list.add(second);
+    list.add(std::string("three"));
+    list.add(std::string("four"));
+
+    list.remove(1);
+
+    ASSERT_EQ(list.size(), 3UL);
+    EXPECT_EQ(list.at(0), "one");
+    EXPECT_EQ(list.at(1), "three");
+    EXPECT_EQ(list.at(2), "four");
+    EXPECT_EQ(second, "two");
+}
+
+// Regression: add() must copy-construct into storage rather than memcpy the
+// caller's object, or resource-owning types (here, a heap buffer) get
+// bitwise-duplicated and later double-freed once ~T() is invoked on both the
+// caller's temporary and the stored "copy".
+TEST(ChunkedListCppTest, AddCopyConstructsOwningTypesWithoutDoubleFree) {
+    struct Owning {
+        int* data;
+        Owning() : data(new int(0)) {}
+        Owning(const Owning& other) : data(new int(*other.data)) {}
+        ~Owning() { delete data; }
+    };
+
+    container::chunked_list::ChunkedList<Owning> list(1024);
+    Owning temp;
+    *temp.data = 42;
+    list.add(temp);  // must deep-copy, not bitwise-copy temp.data's pointer
+
+    EXPECT_EQ(*list.at(0).data, 42);
+    EXPECT_NE(list.at(0).data, temp.data);  // distinct allocations, not aliased
+
+    // temp goes out of scope here (~Owning frees temp.data); if add() had
+    // aliased the pointer, list's element would now dangle. Then list's
+    // destructor runs and would double-free the same pointer temp already
+    // freed. AddressSanitizer/heap corruption would catch this if it regressed.
+}

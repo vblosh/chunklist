@@ -16,11 +16,17 @@ extern "C" {
 /// Error code for memory allocation failure
 #define CHUNKED_LIST_ERROR_ALLOCATION_FAILED -2
 
+/// Error code for an invalid argument (e.g. zero item_size or chunk_size)
+#define CHUNKED_LIST_ERROR_INVALID_ARGUMENT -3
+
 /// Chunk size definition (16 KB)
 #define CHUNKED_LIST_CHUNK_SIZE (16 * 1024)
 
 /// Opaque type for the chunked list handle
 typedef void* CHUNKED_LIST_HANDLE;
+
+typedef void (*CHUNKED_LIST_MOVE_ASSIGN_CALLBACK)(void* destination, void* source);
+typedef void (*CHUNKED_LIST_DESTROY_CALLBACK)(void* item);
 
 /**
  * @brief Creates a new chunked list container.
@@ -46,7 +52,7 @@ int chunked_list_destroy(CHUNKED_LIST_HANDLE list);
 /**
  * @brief Retrieves an item at a specific index in the chunked list.
  *
- * Retrieves the item located chunked_list_at the given index.
+ * Retrieves the item located at the given index.
  *
  * @param list A handle to the chunked list.
  * @param index The index of the item to retrieve.
@@ -78,16 +84,28 @@ int chunked_list_expand(CHUNKED_LIST_HANDLE list, void** pnewItem);
 int chunked_list_add(CHUNKED_LIST_HANDLE list, void* item);
 
 /**
- * @brief Removes an item from the chunked list chunked_list_at a specific index.
+ * @brief Removes an item from the chunked list at a specific index.
  *
- * Removes the item located chunked_list_at the specified index. The items in the same chunk are
+ * Removes the item located at the specified index. The items in the same chunk are
  * shifted to fill the gap, but other chunks remain unaffected.
  *
  * @param list A handle to the chunked list.
- * @param index The index of the item to chunked_list_remove.
+ * @param index The index of the item to remove.
  * @return CHUNKED_LIST_SUCCESS on success, or CHUNKED_LIST_ERROR_INVALID_INDEX if the index is out of range.
  */
 int chunked_list_remove(CHUNKED_LIST_HANDLE list, size_t index);
+
+/**
+ * @brief Removes an item using callbacks suitable for managed object lifetimes.
+ *
+ * Items after the removed item in the same chunk are shifted with move_assign,
+ * then destroy_item is called for the final moved-from item.
+ */
+int chunked_list_remove_managed(
+    CHUNKED_LIST_HANDLE list,
+    size_t index,
+    CHUNKED_LIST_MOVE_ASSIGN_CALLBACK move_assign,
+    CHUNKED_LIST_DESTROY_CALLBACK destroy_item);
 
 /**
  * @brief Clears all items from the chunked list.
